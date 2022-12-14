@@ -8,10 +8,10 @@ let myMap = L.map("map", {
   
 // Copyright layer
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors', noWrap:true
 }).addTo(myMap);
 
-// Data Array
+// Data Arrays
 let earthquakeLocations = []
 let earthquakeDepth = []
 let earthquakeMagnitudes = []
@@ -22,12 +22,13 @@ d3.json(earthquakeData).then(data=>{
     coords = data.features[i].geometry.coordinates.slice(0,2);
     earthquakeLocations.push(coords);
     depth = data.features[i].geometry.coordinates.slice(2,3);
-    earthquakeDepth.push(depth);
+    earthquakeDepth.push(depth[0]);
     magnitude = data.features[i].properties.mag;
     earthquakeMagnitudes.push(magnitude);
   }
 function colorGenerator(n) {return d3.interpolateReds(n/100)};
 
+//Circle marker and pop-up definition
 for(let location in earthquakeLocations){
   let color = colorGenerator(earthquakeDepth[location])
   L.circleMarker(earthquakeLocations[location].reverse(), {
@@ -38,12 +39,17 @@ for(let location in earthquakeLocations){
   .addTo(myMap)
 };
 
-//legend here
-earthquakeDepth = earthquakeDepth.sort();
+//Legend definition & population
+for (let number in earthquakeDepth){earthquakeDepth[number] = Math.round(earthquakeDepth[number])};
+
+earthquakeDepth = earthquakeDepth.sort((a,b)=>(a-b));
+
+uniqueDepths = [...new Set(earthquakeDepth)];
+console.log(uniqueDepths);
+
 let legend = L.control({position: "bottomright"});
 legend.onAdd = (map) => {
-  let div = L.DomUtil.create('div', 'info legend'), depths = earthquakeDepth.slice(2,9);
-  console.log(depths)
+  let div = L.DomUtil.create('div', 'info legend'), depths = uniqueDepths;
   for(let i = 0; i < depths.length; i++){
     div.innerHTML += 
     '<i style="background:' + colorGenerator(depths[i]) + '"></i> ' +
